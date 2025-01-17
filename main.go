@@ -69,7 +69,8 @@ func afficherMenu() {
 	fmt.Println("1. Ajouter un contact")
 	fmt.Println("2. Lister les contacts")
 	fmt.Println("3. Rechercher un contact")
-	fmt.Println("4. Quitter")
+	fmt.Println("4. Supprimer un contact") 
+	fmt.Println("5. Quitter")
 }
 
 func ajouterContact(reader *bufio.Reader) {
@@ -128,9 +129,46 @@ func rechercherContact(reader *bufio.Reader) {
 	}
 }
 
+func supprimerContact(reader *bufio.Reader) {
+	if len(contacts) == 0 {
+		fmt.Println("Aucun contact à supprimer.")
+		return
+	}
+
+	fmt.Println("Liste des contacts :")
+	for i, contact := range contacts {
+		fmt.Printf("%d. Nom: %s | Téléphone: %s | Email: %s\n", i+1, contact.Nom, contact.Telephone, contact.Email)
+	}
+
+
+	fmt.Print("Entrez le numéro du contact à supprimer: ")
+	choixStr, _ := reader.ReadString('\n')
+	choixStr = strings.TrimSpace(choixStr)
+
+
+	choix := 0
+	fmt.Sscanf(choixStr, "%d", &choix)
+
+
+	if choix < 1 || choix > len(contacts) {
+		fmt.Println("Numéro invalide.")
+		return
+	}
+
+	contacts = append(contacts[:choix-1], contacts[choix:]...)
+
+	
+	err := sauvegarderContactsDansXML()
+	if err != nil {
+		fmt.Println("Erreur lors de l'enregistrement du fichier XML après suppression :", err)
+		return
+	}
+
+	fmt.Println("Contact supprimé avec succès !")
+}
 
 func main() {
-
+	
 	chargerContactsDepuisXML()
 
 	reader := bufio.NewReader(os.Stdin) 
@@ -140,10 +178,10 @@ func main() {
 
 		fmt.Print("Choisissez une option: ")
 		choixStr, _ := reader.ReadString('\n')
-		choixStr = strings.TrimSpace(choixStr) 
+		choixStr = strings.TrimSpace(choixStr)
 
 		choix := 0
-		fmt.Sscanf(choixStr, "%d", &choix) 
+		fmt.Sscanf(choixStr, "%d", &choix)
 
 		switch choix {
 		case 1:
@@ -153,6 +191,8 @@ func main() {
 		case 3:
 			rechercherContact(reader)
 		case 4:
+			supprimerContact(reader) 
+		case 5:
 			fmt.Println("Au revoir!")
 			return
 		default:
@@ -160,5 +200,4 @@ func main() {
 		}
 	}
 }
-
 
