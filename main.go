@@ -43,8 +43,9 @@ func chargerContactsDepuisXML() {
 	}
 
 	contacts = parsedContacts.List
-	fmt.Println("Contacts chargés avec succès depuis le fichier XML !")
 }
+
+
 
 func afficherMenu() {
 	fmt.Println("\nMenu:")
@@ -105,16 +106,20 @@ func rechercherContact(reader *bufio.Reader) {
 
 
 func main() {
+
+	chargerContactsDepuisXML()
+
 	reader := bufio.NewReader(os.Stdin) 
 
 	for {
 		afficherMenu()
 
 		fmt.Print("Choisissez une option: ")
-		choixStr, _ := reader.ReadString('\n') 
+		choixStr, _ := reader.ReadString('\n')
 		choixStr = strings.TrimSpace(choixStr) 
+
 		choix := 0
-		fmt.Sscanf(choixStr, "%d", &choix)
+		fmt.Sscanf(choixStr, "%d", &choix) 
 
 		switch choix {
 		case 1:
@@ -131,4 +136,5 @@ func main() {
 		}
 	}
 }
+
 
