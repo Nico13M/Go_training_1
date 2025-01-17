@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"github.com/rivo/tview"
 )
+
 
 type Contact struct {
 	Nom       string `xml:"Nom"`
@@ -130,41 +132,45 @@ func rechercherContact(reader *bufio.Reader) {
 }
 
 func supprimerContact(reader *bufio.Reader) {
+	// Vérifie s'il y a des contacts à supprimer
 	if len(contacts) == 0 {
 		fmt.Println("Aucun contact à supprimer.")
 		return
 	}
 
-	fmt.Println("Liste des contacts :")
+	// Crée une nouvelle application tview
+	app := tview.NewApplication()
+
+	// Crée une liste tview et configure ses options
+	list := tview.NewList().
+		ShowSecondaryText(false)
+
+	// Ajoute les contacts à la liste
 	for i, contact := range contacts {
-		fmt.Printf("%d. Nom: %s | Téléphone: %s | Email: %s\n", i+1, contact.Nom, contact.Telephone, contact.Email)
+		list.AddItem(fmt.Sprintf("%d. %s", i+1, contact.Nom), "", 0, nil)
 	}
 
+	// Ajoute une fonction pour gérer la sélection d'un élément
+	list.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		// Supprime le contact sélectionné
+		contacts = append(contacts[:index], contacts[index+1:]...)
 
-	fmt.Print("Entrez le numéro du contact à supprimer: ")
-	choixStr, _ := reader.ReadString('\n')
-	choixStr = strings.TrimSpace(choixStr)
+		// Sauvegarde les contacts après la suppression
+		err := sauvegarderContactsDansXML()
+		if err != nil {
+			fmt.Println("Erreur lors de la sauvegarde après suppression :", err)
+		} else {
+			fmt.Println("Contact supprimé avec succès !")
+		}
 
+		// Quitte l'application tview
+		app.Stop()
+	})
 
-	choix := 0
-	fmt.Sscanf(choixStr, "%d", &choix)
-
-
-	if choix < 1 || choix > len(contacts) {
-		fmt.Println("Numéro invalide.")
-		return
+	// Lance l'application tview
+	if err := app.SetRoot(list, true).Run(); err != nil {
+		fmt.Println("Erreur lors de l'exécution de l'application tview :", err)
 	}
-
-	contacts = append(contacts[:choix-1], contacts[choix:]...)
-
-	
-	err := sauvegarderContactsDansXML()
-	if err != nil {
-		fmt.Println("Erreur lors de l'enregistrement du fichier XML après suppression :", err)
-		return
-	}
-
-	fmt.Println("Contact supprimé avec succès !")
 }
 
 func main() {
