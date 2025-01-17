@@ -44,6 +44,23 @@ func chargerContactsDepuisXML() {
 
 	contacts = parsedContacts.List
 }
+func sauvegarderContactsDansXML() error {
+	
+	contactsWrapper := Contacts{List: contacts}
+	data, err := xml.MarshalIndent(contactsWrapper, "", "  ")
+	if err != nil {
+		return fmt.Errorf("erreur lors de la conversion en XML : %v", err)
+	}
+	
+	data = append([]byte(xml.Header), data...)
+
+	err = ioutil.WriteFile("contact.xml", data, 0644)
+	if err != nil {
+		return fmt.Errorf("erreur lors de l'écriture dans le fichier XML : %v", err)
+	}
+
+	return nil
+}
 
 
 
@@ -71,8 +88,15 @@ func ajouterContact(reader *bufio.Reader) {
 	contact := Contact{Nom: nom, Telephone: telephone, Email: email}
 	contacts = append(contacts, contact)
 
-	fmt.Println("Contact ajouté avec succès !")
+	err := sauvegarderContactsDansXML()
+	if err != nil {
+		fmt.Println("Erreur lors de l'enregistrement du contact :", err)
+		return
+	}
+
+	fmt.Println("Contact ajouté et enregistré avec succès !")
 }
+
 
 
 func listerContacts() {
