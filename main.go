@@ -2,18 +2,49 @@ package main
 
 import (
 	"bufio"
+	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 )
 
 type Contact struct {
-	Nom   string
-	Telephone string
-	Email string
+	Nom       string `xml:"Nom"`
+	Telephone string `xml:"Telephone"`
+	Email     string `xml:"Email"`
+}
+
+type Contacts struct {
+	List []Contact `xml:"Contact"`
 }
 
 var contacts []Contact
+
+func chargerContactsDepuisXML() {
+	file, err := os.Open("contact.xml")
+	if err != nil {
+		fmt.Println("Erreur lors de l'ouverture du fichier XML:", err)
+		return
+	}
+	defer file.Close()
+
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println("Erreur lors de la lecture du fichier XML:", err)
+		return
+	}
+
+	var parsedContacts Contacts
+	err = xml.Unmarshal(data, &parsedContacts)
+	if err != nil {
+		fmt.Println("Erreur lors du parsing du fichier XML:", err)
+		return
+	}
+
+	contacts = parsedContacts.List
+	fmt.Println("Contacts chargés avec succès depuis le fichier XML !")
+}
 
 func afficherMenu() {
 	fmt.Println("\nMenu:")
@@ -76,6 +107,8 @@ func rechercherContact() {
 }
 
 func main() {
+	chargerContactsDepuisXML()
+
 	for {
 		afficherMenu()
 

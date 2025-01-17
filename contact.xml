@@ -1,0 +1,12 @@
+<Contacts>
+    <Contact>
+        <Nom>Jean Dupont</Nom>
+        <Telephone>0123456789</Telephone>
+        <Email>jean.dupont@example.com</Email>
+    </Contact>
+    <Contact>
+        <Nom>Marie Curie</Nom>
+        <Telephone>0987654321</Telephone>
+        <Email>marie.curie@example.com</Email>
+    </Contact>
+</Contacts>
