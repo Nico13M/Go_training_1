@@ -54,9 +54,7 @@ func afficherMenu() {
 	fmt.Println("4. Quitter")
 }
 
-func ajouterContact() {
-	reader := bufio.NewReader(os.Stdin)
-
+func ajouterContact(reader *bufio.Reader) {
 	fmt.Print("Nom: ")
 	nom, _ := reader.ReadString('\n')
 	nom = strings.TrimSpace(nom)
@@ -75,6 +73,7 @@ func ajouterContact() {
 	fmt.Println("Contact ajouté avec succès !")
 }
 
+
 func listerContacts() {
 	if len(contacts) == 0 {
 		fmt.Println("Aucun contact trouvé.")
@@ -86,9 +85,7 @@ func listerContacts() {
 	}
 }
 
-func rechercherContact() {
-	reader := bufio.NewReader(os.Stdin)
-
+func rechercherContact(reader *bufio.Reader) {
 	fmt.Print("Entrez le nom à rechercher: ")
 	nomRecherche, _ := reader.ReadString('\n')
 	nomRecherche = strings.TrimSpace(nomRecherche)
@@ -106,23 +103,26 @@ func rechercherContact() {
 	}
 }
 
+
 func main() {
-	chargerContactsDepuisXML()
+	reader := bufio.NewReader(os.Stdin) 
 
 	for {
 		afficherMenu()
 
-		var choix int
 		fmt.Print("Choisissez une option: ")
-		fmt.Scan(&choix)
+		choixStr, _ := reader.ReadString('\n') 
+		choixStr = strings.TrimSpace(choixStr) 
+		choix := 0
+		fmt.Sscanf(choixStr, "%d", &choix)
 
 		switch choix {
 		case 1:
-			ajouterContact()
+			ajouterContact(reader)
 		case 2:
 			listerContacts()
 		case 3:
-			rechercherContact()
+			rechercherContact(reader)
 		case 4:
 			fmt.Println("Au revoir!")
 			return
@@ -131,3 +131,4 @@ func main() {
 		}
 	}
 }
+
