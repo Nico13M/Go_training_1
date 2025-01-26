@@ -132,42 +132,35 @@ func rechercherContact(reader *bufio.Reader) {
 }
 
 func supprimerContact(reader *bufio.Reader) {
-	// Vérifie s'il y a des contacts à supprimer
 	if len(contacts) == 0 {
 		fmt.Println("Aucun contact à supprimer.")
 		return
 	}
 
-	// Crée une nouvelle application tview
 	app := tview.NewApplication()
 
-	// Crée une liste tview et configure ses options
-	list := tview.NewList().
-		ShowSecondaryText(false)
+	list := tview.NewList().ShowSecondaryText(false)
 
-	// Ajoute les contacts à la liste
-	for i, contact := range contacts {
-		list.AddItem(fmt.Sprintf("%d. %s", i+1, contact.Nom), "", 0, nil)
-	}
-
-	// Ajoute une fonction pour gérer la sélection d'un élément
-	list.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
-		// Supprime le contact sélectionné
-		contacts = append(contacts[:index], contacts[index+1:]...)
-
-		// Sauvegarde les contacts après la suppression
-		err := sauvegarderContactsDansXML()
-		if err != nil {
-			fmt.Println("Erreur lors de la sauvegarde après suppression :", err)
-		} else {
-			fmt.Println("Contact supprimé avec succès !")
-		}
-
-		// Quitte l'application tview
+	list.AddItem("Retour", "", 'r', func() {
+		fmt.Println("Retour au menu principal.")
 		app.Stop()
 	})
 
-	// Lance l'application tview
+	for i, contact := range contacts {
+		list.AddItem(fmt.Sprintf("%d. %s", i+1, contact.Nom), "", 0, func(index int) func() {
+			return func() {
+				contacts = append(contacts[:index], contacts[index+1:]...)
+				err := sauvegarderContactsDansXML()
+				if err != nil {
+					fmt.Println("Erreur lors de la sauvegarde après suppression :", err)
+				} else {
+					fmt.Println("Contact supprimé avec succès !")
+				}
+				app.Stop()
+			}
+		}(i))
+	}
+
 	if err := app.SetRoot(list, true).Run(); err != nil {
 		fmt.Println("Erreur lors de l'exécution de l'application tview :", err)
 	}
