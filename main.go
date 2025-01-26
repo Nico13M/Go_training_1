@@ -225,13 +225,19 @@ func supprimerContact() {
 		index := i         // Capturer l'index
 		list.AddItem(fmt.Sprintf("%s | %s | %s", contact.Nom, contact.Telephone, contact.Email), "", 0, func() {
 			contacts = append(contacts[:index], contacts[index+1:]...)
+
 			err := sauvegarderContactsDansXML()
 			if err != nil {
 				fmt.Println("Erreur lors de la sauvegarde après suppression :", err)
 			} else {
-				fmt.Println("Contact supprimé avec succès !")
+				modal := tview.NewModal().
+					SetText("Contact supprimé avec succès !").
+					AddButtons([]string{"OK"}).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						app.SetRoot(list, true) 
+					})
+				app.SetRoot(modal, true)
 			}
-			app.Stop()
 		})
 	}
 
