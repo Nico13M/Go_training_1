@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+
 	"github.com/rivo/tview"
 )
-
 
 type Contact struct {
 	Nom       string `xml:"Nom"`
@@ -22,6 +22,7 @@ type Contacts struct {
 }
 
 var contacts []Contact
+var app *tview.Application
 
 func chargerContactsDepuisXML() {
 	file, err := os.Open("contact.xml")
@@ -46,14 +47,14 @@ func chargerContactsDepuisXML() {
 
 	contacts = parsedContacts.List
 }
+
 func sauvegarderContactsDansXML() error {
-	
 	contactsWrapper := Contacts{List: contacts}
 	data, err := xml.MarshalIndent(contactsWrapper, "", "  ")
 	if err != nil {
 		return fmt.Errorf("erreur lors de la conversion en XML : %v", err)
 	}
-	
+
 	data = append([]byte(xml.Header), data...)
 
 	err = ioutil.WriteFile("contact.xml", data, 0644)
@@ -64,14 +65,12 @@ func sauvegarderContactsDansXML() error {
 	return nil
 }
 
-
-
 func afficherMenu() {
 	fmt.Println("\nMenu:")
 	fmt.Println("1. Ajouter un contact")
 	fmt.Println("2. Lister les contacts")
 	fmt.Println("3. Rechercher un contact")
-	fmt.Println("4. Supprimer un contact") 
+	fmt.Println("4. Supprimer un contact")
 	fmt.Println("5. Quitter")
 }
 
@@ -100,17 +99,32 @@ func ajouterContact(reader *bufio.Reader) {
 	fmt.Println("Contact ajouté et enregistré avec succès !")
 }
 
-
-
 func listerContacts() {
 	if len(contacts) == 0 {
-		fmt.Println("Aucun contact trouvé.")
+		modal := tview.NewModal().
+			SetText("Aucun contact trouvé.").
+			AddButtons([]string{"OK"}).
+			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+				app.Stop()
+			})
+
+		app.SetRoot(modal, true)
 		return
 	}
 
-	for i, contact := range contacts {
-		fmt.Printf("%d. Nom: %s | Téléphone: %s | Email: %s\n", i+1, contact.Nom, contact.Telephone, contact.Email)
+	list := tview.NewList()
+	for _, contact := range contacts {
+		list.AddItem(fmt.Sprintf("%s | %s | %s", contact.Nom, contact.Telephone, contact.Email), "", 0, nil)
 	}
+
+	list.AddItem("Quitter", "", 'q', func() {
+		app.Stop()
+	})
+
+	list.SetBorder(true).SetTitle("Liste des Contacts").SetTitleAlign(tview.AlignLeft)
+
+	app.SetRoot(list, true)
+	app.Run()
 }
 
 func rechercherContact(reader *bufio.Reader) {
@@ -131,46 +145,42 @@ func rechercherContact(reader *bufio.Reader) {
 	}
 }
 
-func supprimerContact(reader *bufio.Reader) {
+func supprimerContact() {
 	if len(contacts) == 0 {
 		fmt.Println("Aucun contact à supprimer.")
 		return
 	}
 
-	app := tview.NewApplication()
-
 	list := tview.NewList().ShowSecondaryText(false)
+	list.SetBorder(true).SetTitle("Supprimer un Contact").SetTitleAlign(tview.AlignLeft)
+
+	for i, contact := range contacts {
+		contact := contact // Pour éviter des problèmes de capture dans les closures
+		index := i         // Capturer l'index
+		list.AddItem(fmt.Sprintf("%s | %s | %s", contact.Nom, contact.Telephone, contact.Email), "", 0, func() {
+			contacts = append(contacts[:index], contacts[index+1:]...)
+			err := sauvegarderContactsDansXML()
+			if err != nil {
+				fmt.Println("Erreur lors de la sauvegarde après suppression :", err)
+			} else {
+				fmt.Println("Contact supprimé avec succès !")
+			}
+			app.Stop()
+		})
+	}
 
 	list.AddItem("Retour", "", 'r', func() {
-		fmt.Println("Retour au menu principal.")
 		app.Stop()
 	})
 
-	for i, contact := range contacts {
-		list.AddItem(fmt.Sprintf("%d. %s", i+1, contact.Nom), "", 0, func(index int) func() {
-			return func() {
-				contacts = append(contacts[:index], contacts[index+1:]...)
-				err := sauvegarderContactsDansXML()
-				if err != nil {
-					fmt.Println("Erreur lors de la sauvegarde après suppression :", err)
-				} else {
-					fmt.Println("Contact supprimé avec succès !")
-				}
-				app.Stop()
-			}
-		}(i))
-	}
-
-	if err := app.SetRoot(list, true).Run(); err != nil {
-		fmt.Println("Erreur lors de l'exécution de l'application tview :", err)
-	}
+	app.SetRoot(list, true)
+	app.Run()
 }
 
 func main() {
-	
 	chargerContactsDepuisXML()
-
-	reader := bufio.NewReader(os.Stdin) 
+	app = tview.NewApplication()
+	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		afficherMenu()
@@ -190,7 +200,7 @@ func main() {
 		case 3:
 			rechercherContact(reader)
 		case 4:
-			supprimerContact(reader) 
+			supprimerContact()
 		case 5:
 			fmt.Println("Au revoir!")
 			return
@@ -199,4 +209,3 @@ func main() {
 		}
 	}
 }
-
