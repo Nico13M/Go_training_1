@@ -74,29 +74,57 @@ func afficherMenu() {
 	fmt.Println("5. Quitter")
 }
 
-func ajouterContact(reader *bufio.Reader) {
-	fmt.Print("Nom: ")
-	nom, _ := reader.ReadString('\n')
-	nom = strings.TrimSpace(nom)
+func ajouterContact() {
+	form := tview.NewForm()
 
-	fmt.Print("Téléphone: ")
-	telephone, _ := reader.ReadString('\n')
-	telephone = strings.TrimSpace(telephone)
+	form.AddInputField("Nom", "", 30, nil, nil).
+		AddInputField("Téléphone", "", 30, nil, nil).
+		AddInputField("Email", "", 30, nil, nil).
+		AddButton("Ajouter", func() {
+			nom := form.GetFormItemByLabel("Nom").(*tview.InputField).GetText()
+			telephone := form.GetFormItemByLabel("Téléphone").(*tview.InputField).GetText()
+			email := form.GetFormItemByLabel("Email").(*tview.InputField).GetText()
 
-	fmt.Print("Email: ")
-	email, _ := reader.ReadString('\n')
-	email = strings.TrimSpace(email)
+			if nom == "" || telephone == "" || email == "" {
+				modal := tview.NewModal().
+					SetText("Tous les champs sont requis !").
+					AddButtons([]string{"OK"}).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						app.SetRoot(form, true)
+					})
+				app.SetRoot(modal, true)
+				return
+			}
 
-	contact := Contact{Nom: nom, Telephone: telephone, Email: email}
-	contacts = append(contacts, contact)
+			contact := Contact{Nom: nom, Telephone: telephone, Email: email}
+			contacts = append(contacts, contact)
 
-	err := sauvegarderContactsDansXML()
-	if err != nil {
-		fmt.Println("Erreur lors de l'enregistrement du contact :", err)
-		return
-	}
+			err := sauvegarderContactsDansXML()
+			if err != nil {
+				modal := tview.NewModal().
+					SetText(fmt.Sprintf("Erreur lors de l'enregistrement : %v", err)).
+					AddButtons([]string{"OK"}).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						app.SetRoot(form, true)
+					})
+				app.SetRoot(modal, true)
+			} else {
+				modal := tview.NewModal().
+					SetText("Contact ajouté avec succès !").
+					AddButtons([]string{"OK"}).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						app.Stop()
+					})
+				app.SetRoot(modal, true)
+			}
+		}).
+		AddButton("Annuler", func() {
+			app.Stop()
+		})
 
-	fmt.Println("Contact ajouté et enregistré avec succès !")
+	form.SetBorder(true).SetTitle("Ajouter un Contact").SetTitleAlign(tview.AlignLeft)
+	app.SetRoot(form, true)
+	app.Run()
 }
 
 func listerContacts() {
@@ -194,7 +222,7 @@ func main() {
 
 		switch choix {
 		case 1:
-			ajouterContact(reader)
+			ajouterContact()
 		case 2:
 			listerContacts()
 		case 3:
