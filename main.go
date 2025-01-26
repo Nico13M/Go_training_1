@@ -155,22 +155,60 @@ func listerContacts() {
 	app.Run()
 }
 
-func rechercherContact(reader *bufio.Reader) {
-	fmt.Print("Entrez le nom à rechercher: ")
-	nomRecherche, _ := reader.ReadString('\n')
-	nomRecherche = strings.TrimSpace(nomRecherche)
+func rechercherContact() {
+	form := tview.NewForm()
+	form.AddInputField("Nom", "", 30, nil, nil).
+		AddButton("Rechercher", func() {
+			nomRecherche := form.GetFormItemByLabel("Nom").(*tview.InputField).GetText()
+			nomRecherche = strings.TrimSpace(nomRecherche)
 
-	trouve := false
-	for _, contact := range contacts {
-		if strings.Contains(strings.ToLower(contact.Nom), strings.ToLower(nomRecherche)) {
-			fmt.Printf("Contact trouvé : Nom: %s | Téléphone: %s | Email: %s\n", contact.Nom, contact.Telephone, contact.Email)
-			trouve = true
-		}
-	}
+			if nomRecherche == "" {
+				modal := tview.NewModal().
+					SetText("Veuillez entrer un nom.").
+					AddButtons([]string{"OK"}).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						app.SetRoot(form, true)
+					})
+				app.SetRoot(modal, true)
+				return
+			}
 
-	if !trouve {
-		fmt.Println("Aucun contact trouvé avec ce nom.")
-	}
+			results := []Contact{}
+			for _, contact := range contacts {
+				if strings.Contains(strings.ToLower(contact.Nom), strings.ToLower(nomRecherche)) {
+					results = append(results, contact)
+				}
+			}
+
+			if len(results) == 0 {
+				modal := tview.NewModal().
+					SetText("Aucun contact trouvé.").
+					AddButtons([]string{"OK"}).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						app.SetRoot(form, true)
+					})
+				app.SetRoot(modal, true)
+			} else {
+				list := tview.NewList()
+				for _, contact := range results {
+					list.AddItem(fmt.Sprintf("%s | %s | %s", contact.Nom, contact.Telephone, contact.Email), "", 0, nil)
+				}
+
+				list.AddItem("Retour", "", 'r', func() {
+					app.SetRoot(form, true)
+				})
+
+				list.SetBorder(true).SetTitle("Résultats de la Recherche").SetTitleAlign(tview.AlignLeft)
+				app.SetRoot(list, true)
+			}
+		}).
+		AddButton("Annuler", func() {
+			app.Stop()
+		})
+
+	form.SetBorder(true).SetTitle("Rechercher un Contact").SetTitleAlign(tview.AlignLeft)
+	app.SetRoot(form, true)
+	app.Run()
 }
 
 func supprimerContact() {
@@ -226,7 +264,7 @@ func main() {
 		case 2:
 			listerContacts()
 		case 3:
-			rechercherContact(reader)
+			rechercherContact()
 		case 4:
 			supprimerContact()
 		case 5:
